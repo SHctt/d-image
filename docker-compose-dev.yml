@@ -1,0 +1,59 @@
+version: '3'
+
+networks:
+  panel:
+
+services:
+  web:
+    container_name: web-nginx
+    build:
+      context: ./services/nginx
+      dockerfile: Dockerfile
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:88"
+    depends_on:
+      - php
+      - db
+    networks:
+      - panel
+    volumes_from:
+      - php
+    volumes:
+      - ./services/nginx/config:/etc/nginx/conf.d
+  php:
+    container_name: php
+    build:
+      context: ./services/php
+      dockerfile: Dockerfile
+    environment:
+      TZ: Asia/Shanghai
+    networks:
+      - panel
+    volumes:
+      - ./app:/mnt/app
+    tty: true
+  db:
+    container_name: db
+    image: mariadb:10.6
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    networks:
+      - panel
+    volumes:
+      - ./app/database:/var/lib/mysql
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8081:80"
+    networks:
+      - panel
+    environment:
+      PMA_HOST: "db"
+      PMA_USER: ${MYSQL_USER}
+      PMA_PASSWORD: ${MYSQL_PASSWORD}
